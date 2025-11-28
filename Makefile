@@ -2,7 +2,7 @@
 # The Asheville Setlist - Makefile
 # =============================================================================
 
-.PHONY: help dev stop db migrate migrate-down seed test lint build clean
+.PHONY: help start dev stop db migrate migrate-down seed test lint build clean
 
 # Default target
 help:
@@ -11,7 +11,8 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Development:"
-	@echo "  dev          Start local development environment (DB + services)"
+	@echo "  start        Start everything (DB + API + Frontend)"
+	@echo "  dev          Start database only (with next steps)"
 	@echo "  stop         Stop all containers"
 	@echo "  logs         Show container logs"
 	@echo ""
@@ -56,7 +57,17 @@ DATABASE_URL ?= postgres://postgres:postgres@localhost:5432/asheville_setlist?ss
 # DEVELOPMENT
 # =============================================================================
 
-# Start everything
+# Start everything (DB + API + Frontend)
+start: db
+	@echo "✓ Database is running on localhost:5432"
+	@echo "Starting API and Frontend..."
+	@echo "Note: Frontend on port 80 requires sudo password"
+	@trap 'kill 0' EXIT; \
+		(cd backend && go run ./cmd/api) & \
+		(cd frontend && sudo npm run dev) & \
+		wait
+
+# Start database only with next steps
 dev: db
 	@echo "✓ Database is running on localhost:5432"
 	@echo ""
@@ -65,6 +76,8 @@ dev: db
 	@echo "  make seed     - Load seed data"
 	@echo "  make api      - Start Go API server"
 	@echo "  make web      - Start Next.js frontend"
+	@echo ""
+	@echo "Or run: make start  - Start everything at once"
 
 # Stop all containers
 stop:
@@ -158,9 +171,9 @@ build:
 # FRONTEND
 # =============================================================================
 
-# Run Next.js dev server
+# Run Next.js dev server (port 80 requires sudo)
 web:
-	cd frontend && npm run dev
+	cd frontend && sudo npm run dev
 
 # Build frontend
 web-build:
